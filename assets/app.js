@@ -15,97 +15,23 @@ firebase.initializeApp(config);
 var database = firebase.database();
 
 
+
+// Initialize Data as a Global Variable (so it can be accessed in the 1 Minute Refresh Function)
+var data;
+
+
+
 // Firebase change found - Pull New Data as soon as a database changes
 database.ref().on("value", function(snapshot) {
   
-  // Clear Old Data from Browser Table
-  $('.table-body-row').empty();
-
   // Collect updated Firebase Data
-  var data = snapshot.val();
+  data = snapshot.val();
 
-  // Parse & Scrub the Firebase Data and then Append to HTML Table
-  $.each(data, function(key, value){
-
-    // Collect variable (done for each value from Firebase)
-    var trainName = value.name;
-    var trainDestination = value.destination;
-    var trainFreq = value.frequency;
-
-    var trainFirstArrivalTime = value.firstArrival;
-    
-
-    // Initialize variables to be calculated
-    var trainNextDeparture;
-    var trainMinutesAway;
-
-
-    // --------------------------------- Calculate values using Moment.js ---------------------------------
-    var convertedDate = moment(new Date(trainFirstArrivalTime));
-    
-    // Calculate Minutes Away
-      // Find How Many Minutes Ago the very First Train Departed
-    var minuteDiffFirstArrivalToNow = moment(convertedDate).diff( moment(), "minutes")*(-1);
-
-      // --------------- Sanity Check for New Train Times ---------------
-      // Negative Value - If the Train never arrived yet (first arrival date is later than now)
-      if(minuteDiffFirstArrivalToNow <= 0){
-
-        // Train Departure = Current Time - First Arrival Time
-        trainMinutesAway = moment(convertedDate).diff( moment(), "minutes");
-
-        // Next Depature Time = First Departure Time (since the train has yet to come)
-        trainNextDepartureDate = convertedDate;
-
-      }
-      // Otherwise, the train arrvied in the past, so do the math
-      else{
-
-        // Next Train Departure = Frequency - (remainder of minutes from last departure)
-        trainMinutesAway = trainFreq - (minuteDiffFirstArrivalToNow % trainFreq);
-
-        // Next Departure Time = Current Time + Minutes Away
-        var trainNextDepartureDate = moment().add(trainMinutesAway, 'minutes');
-      }
-      //----------------------------------------------------------------
-
-    // Re-Format Time to AM/PM
-    trainNextDeparture = trainNextDepartureDate.format("hh:mm A");
-
-    //-----------------------------------------------------------------------------------------------------
-
-
-    // Append New HTML Table Row (done for each key from Firebase)
-    var newRow = $('<tr>');
-    newRow.addClass("table-body-row");
-
-    // Create New HTML Data Cells (done for each value from Firebase)
-    var trainNameTd = $('<td>');
-    var destinationTd = $('<td>');
-    var frequencyTd = $('<td>');
-    var nextDepartureTd = $('<td>');
-    var minutesAwayTd = $('<td>');
-
-    // Add text to the HTML Data Cells
-    trainNameTd.text(trainName);
-    destinationTd.text(trainDestination);
-    frequencyTd.text(trainFreq);
-    nextDepartureTd.text(trainNextDeparture);
-    minutesAwayTd.text(trainMinutesAway);
-
-    // Append HTML Data Cells to the new Row
-    newRow.append(trainNameTd);
-    newRow.append(destinationTd);
-    newRow.append(frequencyTd);
-    newRow.append(nextDepartureTd);
-    newRow.append(minutesAwayTd);
-
-    // Append new Row to the HTML Table
-    $('.table').append(newRow);
-
-  });
+  // Update HTML Table on the DOM
+  refreshTable();
 
 });
+
 
 
 // Submit Button Click - Collect values and Update Firebase
@@ -116,7 +42,6 @@ $("#addTrainButton").on('click', function(){
   var trainDestination = $("#destinationInput").val().trim();
   var trainFirstArrivalTime = $("#firstArrivalInput").val().trim();
   var trainFreq = $("#frequencyInput").val().trim();
-
 
   // --------------------------- Sanity Checks for user inputs ---------------------------
   if(trainName == "" || trainName == null){
@@ -176,7 +101,6 @@ $("#addTrainButton").on('click', function(){
   var trainFirstArrival = dateString.concat(" ", trainFirstArrivalTime);
 
 
-
   // Push New Data to FireBase (generates new keys, adding to the database)
   database.ref().push({
     name: trainName,
@@ -195,8 +119,100 @@ $("#addTrainButton").on('click', function(){
 
   // Prevent Default Refresh of Submit Button
   return false;
- 
 });
 
 
+
+
+// Function to Update the HTML Table on the DOM
+function refreshTable(){
+
+  // Clear Old Data from Browser Table
+  $('.table-body-row').empty();
+
+
+  // Parse & Scrub the Firebase Data and then Append to HTML Table
+  $.each(data, function(key, value){
+
+    // Collect variable (done for each value from Firebase)
+    var trainName = value.name;
+    var trainDestination = value.destination;
+    var trainFreq = value.frequency;
+
+    var trainFirstArrivalTime = value.firstArrival;
+    
+
+    // Initialize variables to be calculated
+    var trainNextDeparture;
+    var trainMinutesAway;
+
+
+    // --------------------------------- Calculate values using Moment.js ---------------------------------
+    var convertedDate = moment(new Date(trainFirstArrivalTime));
+    
+    // Calculate Minutes Away
+      // Find How Many Minutes Ago the very First Train Departed
+    var minuteDiffFirstArrivalToNow = moment(convertedDate).diff( moment(), "minutes")*(-1);
+
+      // --------------- Sanity Check for New Train Times ---------------
+      // Negative Value - If the Train never arrived yet (first arrival date is later than now)
+      if(minuteDiffFirstArrivalToNow <= 0){
+
+        // Train Departure = Current Time - First Arrival Time
+        trainMinutesAway = moment(convertedDate).diff( moment(), "minutes");
+
+        // Next Depature Time = First Departure Time (since the train has yet to come)
+        trainNextDepartureDate = convertedDate;
+
+      }
+      // Otherwise, the train arrvied in the past, so do the math
+      else{
+
+        // Next Train Departure = Frequency - (remainder of minutes from last departure)
+        trainMinutesAway = trainFreq - (minuteDiffFirstArrivalToNow % trainFreq);
+
+        // Next Departure Time = Current Time + Minutes Away
+        var trainNextDepartureDate = moment().add(trainMinutesAway, 'minutes');
+      }
+      //----------------------------------------------------------------
+
+    // Re-Format Time to AM/PM
+    trainNextDeparture = trainNextDepartureDate.format("hh:mm A");
+    //-----------------------------------------------------------------------------------------------------
+
+
+    // Append New HTML Table Row (done for each key from Firebase)
+    var newRow = $('<tr>');
+    newRow.addClass("table-body-row");
+
+    // Create New HTML Data Cells (done for each value from Firebase)
+    var trainNameTd = $('<td>');
+    var destinationTd = $('<td>');
+    var frequencyTd = $('<td>');
+    var nextDepartureTd = $('<td>');
+    var minutesAwayTd = $('<td>');
+
+    // Add text to the HTML Data Cells
+    trainNameTd.text(trainName);
+    destinationTd.text(trainDestination);
+    frequencyTd.text(trainFreq);
+    nextDepartureTd.text(trainNextDeparture);
+    minutesAwayTd.text(trainMinutesAway);
+
+    // Append HTML Data Cells to the new Row
+    newRow.append(trainNameTd);
+    newRow.append(destinationTd);
+    newRow.append(frequencyTd);
+    newRow.append(nextDepartureTd);
+    newRow.append(minutesAwayTd);
+
+    // Append new Row to the HTML Table
+    $('.table').append(newRow);
+
+  });
+}
+
+
+
 // Refresh the Page Each Minute
+var counter = setInterval(refreshTable, 60*1000);

@@ -43,6 +43,7 @@ $("#addTrainButton").on('click', function(){
   var trainFirstArrivalTime = $("#firstArrivalInput").val().trim();
   var trainFreq = $("#frequencyInput").val().trim();
 
+
   // --------------------------- Sanity Checks for user inputs ---------------------------
   if(trainName == "" || trainName == null){
     alert("Please enter a Train Name!");
@@ -214,5 +215,18 @@ function refreshTable(){
 
 
 
-// Refresh the Page Each Minute
-var counter = setInterval(refreshTable, 60*1000);
+// Update the Current Time every second
+var timeStep = setInterval(currentTime, 1000);
+
+function currentTime(){
+  var timeNow = moment().format("hh:mm:ss A");
+  $("#current-time").text(timeNow);
+
+  // Refresh the Page every minute, on the minute
+  var secondsNow = moment().format("ss");
+
+  if(secondsNow == "00"){
+    refreshTable();
+  }
+  
+}

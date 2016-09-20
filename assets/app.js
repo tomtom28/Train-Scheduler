@@ -15,10 +15,11 @@ firebase.initializeApp(config);
 var database = firebase.database();
 
 
-
 // Initialize Data as a Global Variable (so it can be accessed in the 1 Minute Refresh Function)
 var data;
 
+
+// ================================================================================
 
 
 // Firebase change found - Pull New Data as soon as a database changes
@@ -32,6 +33,8 @@ database.ref().on("value", function(snapshot) {
 
 });
 
+
+// ================================================================================
 
 
 // Submit Button Click - Collect values and Update Firebase
@@ -63,7 +66,6 @@ $("#addTrainButton").on('click', function(){
   }
   // ------------------------------------------------------------------------------------
 
-
   // Parse the First Arrival Time to Check if its in military time
     // Check for 5 digits and semi-colon in the right place
   if(trainFirstArrivalTime.length != 5 || trainFirstArrivalTime.substring(2,3) != ":"){
@@ -85,7 +87,6 @@ $("#addTrainButton").on('click', function(){
     alert("Please use Military Time! \n" + "Example: 01:00 or 13:00");
     return false;   
   }
-
 
   // Edit the First Arrival Time to include the date of new data submission (for use in moment.js)
     // Collect the date upon user click
@@ -123,6 +124,7 @@ $("#addTrainButton").on('click', function(){
 });
 
 
+// ================================================================================
 
 
 // Function to Update the HTML Table on the DOM
@@ -131,10 +133,18 @@ function refreshTable(){
   // Clear Old Data from Browser Table
   $('.table-body-row').empty();
 
+  // Initialize Array of Objects (for use in appending trains in order of departure for the HTML Table)
+  var arrayOfObjects = [];
 
+  // Initialize Array of Minutes Left to Departure (for use in appending trains in order of departure for the HTML Table)
+  var arrayOfTimes = [];
+
+  // =============================================================================================================
+  
   // Parse & Scrub the Firebase Data and then Append to HTML Table
   $.each(data, function(key, value){
 
+    
     // Collect variable (done for each value from Firebase)
     var trainName = value.name;
     var trainDestination = value.destination;
@@ -148,7 +158,7 @@ function refreshTable(){
     var trainMinutesAway;
 
 
-    // --------------------------------- Calculate values using Moment.js ---------------------------------
+    // ----------------------- Calculate values using Moment.js -----------------------
     var convertedDate = moment(new Date(trainFirstArrivalTime));
     
     // Calculate Minutes Away
@@ -179,40 +189,80 @@ function refreshTable(){
 
     // Re-Format Time to AM/PM
     trainNextDeparture = trainNextDepartureDate.format("hh:mm A");
-    //-----------------------------------------------------------------------------------------------------
+    //-----------------------------------------------------------------------------
 
 
-    // Append New HTML Table Row (done for each key from Firebase)
-    var newRow = $('<tr>');
-    newRow.addClass("table-body-row");
+    // Create a new Object for the train locally (for use in the HTML Table)
+      // Its a little redundant, but much easier to parse through when creating the HTML Table 
+    var newObject = {
+      name: trainName,
+      destination: trainDestination,
+      freq: trainFreq,
+      nextDeparture: trainNextDeparture,
+      minAway: trainMinutesAway
+    };
 
-    // Create New HTML Data Cells (done for each value from Firebase)
-    var trainNameTd = $('<td>');
-    var destinationTd = $('<td>');
-    var frequencyTd = $('<td>');
-    var nextDepartureTd = $('<td>');
-    var minutesAwayTd = $('<td>');
+    // Push the new Object to the array of Objects
+    arrayOfObjects.push(newObject);
 
-    // Add text to the HTML Data Cells
-    trainNameTd.text(trainName);
-    destinationTd.text(trainDestination);
-    frequencyTd.text(trainFreq);
-    nextDepartureTd.text(trainNextDeparture);
-    minutesAwayTd.text(trainMinutesAway);
-
-    // Append HTML Data Cells to the new Row
-    newRow.append(trainNameTd);
-    newRow.append(destinationTd);
-    newRow.append(frequencyTd);
-    newRow.append(nextDepartureTd);
-    newRow.append(minutesAwayTd);
-
-    // Append new Row to the HTML Table
-    $('.table').append(newRow);
+    // Push the time left until depature to the array of Times
+    arrayOfTimes.push(trainMinutesAway);
 
   });
+
+  // =============================================================================================================
+
+  // Sort the array of Time from smallest to largest
+  arrayOfTimes.sort(function(a, b){return a-b});
+
+  // Remove any duplicate values from the array (allowing for the Double For Loop to work properly)
+  $.unique(arrayOfTimes)
+    
+  // Loop through all the time values and append the values to the HTML Table in order of departure time
+  for(var i = 0; i < arrayOfTimes.length; i++){
+
+    // First Loop checks through all the times, second loop checks if any of the objects match that time
+    for(var j = 0; j < arrayOfObjects.length; j++){
+
+      // The object's minutes to departue equals the next lowest value
+      if(arrayOfObjects[j].minAway == arrayOfTimes[i]){
+
+        // Append the Object's elements to the HTML Table
+          // Append New HTML Table Row (done for each key from Firebase)
+        var newRow = $('<tr>');
+        newRow.addClass("table-body-row");
+
+          // Create New HTML Data Cells (done for each value from Firebase)
+        var trainNameTd = $('<td>');
+        var destinationTd = $('<td>');
+        var frequencyTd = $('<td>');
+        var nextDepartureTd = $('<td>');
+        var minutesAwayTd = $('<td>');
+
+          // Add text to the HTML Data Cells
+        trainNameTd.text(arrayOfObjects[j].name);
+        destinationTd.text(arrayOfObjects[j].destination);
+        frequencyTd.text(arrayOfObjects[j].freq);
+        nextDepartureTd.text(arrayOfObjects[j].nextDeparture);
+        minutesAwayTd.text(arrayOfObjects[j].minAway);
+
+          // Append HTML Data Cells to the new Row
+        newRow.append(trainNameTd);
+        newRow.append(destinationTd);
+        newRow.append(frequencyTd);
+        newRow.append(nextDepartureTd);
+        newRow.append(minutesAwayTd);
+
+        // Append new Row to the HTML Table
+        $('.table').append(newRow);
+
+      }
+    }
+  }
 }
 
+
+// ================================================================================
 
 
 // Update the Current Time every second
@@ -228,5 +278,5 @@ function currentTime(){
   if(secondsNow == "00"){
     refreshTable();
   }
-  
+
 }

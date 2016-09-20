@@ -6,9 +6,6 @@
   background-color: white;
   color: black;
 
-/*  border-style: solid;
-  border-width: 8px;*/
-
   padding-top: 1%;
   padding-bottom: 1%;
 }
@@ -35,15 +32,41 @@ img{
   width: auto;
   height: auto;
 
-  max-width: 100%;
+  max-width: 75%;
 
   padding-top: 10%;
 }
 
+#static-table-header{
+  background-color: #fbfbfb;
+}
+
+table{
+  border: 1px solid #e6e6e6;
+}
+
 th{
   text-align: center;
+  font-weight: bold;
+
+  font-size: 16px;
 }
 
 td{
   text-align: center;
+}
+
+.clock-display{
+  font-size: 45px;
+  font-weight: bold;
+}
+
+.panel-title{
+  font-size: 22px;
+  font-weight: bold;
+}
+
+.panel-heading{
+  padding-top: 15px;
+  padding-bottom: 15px;
 }

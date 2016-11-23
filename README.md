@@ -10,7 +10,7 @@ The layout of the page is done in `Bootstrap` and the functionality utilizes `jQ
 ### The clock ticks each second
 ![Page Logo](/screenshots/Title Logo.png)
 
-### Each minute, on the minute, the table refreshes
+### Each minute, on the minute, the trains are sorted in order of departure
 ![Train Table](/screenshots/Train Table.png)
 
 ### Add a train to the database using the submit form

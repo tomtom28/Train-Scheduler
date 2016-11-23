@@ -7,6 +7,7 @@ The layout of the page is done in `Bootstrap` and the functionality utilizes `jQ
 
 # Screenshots
 
+
 ### The clock ticks each second
 ![Page Logo](/screenshots/Title Logo.png)
 
